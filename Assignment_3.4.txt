@@ -1,0 +1,57 @@
+1. Explain HDFS federation and High availability
+
+HDFS Federation:
+
+*HDFS has two core layers namely
+1.Namespace
+2.Block Storage Service
+
+Namespace:
+*It consists of directories, files and blocks.
+*It supports all the namespace related to file system operations.
+
+Block Storage Service:
+*It consists of two parts such as 
+   1.Block Management- *Provides data node cluster membership by handling registeration and peridoic heart beats.
+                                     *Processes block reports and maintains location of the blocks.
+                                     *Supports blocks related operations.
+                                     *Manages replica placement, block replication and deletes blocks that are over replicated.
+   2.Storage - It is provided by datanodes by storing blocks on the local file system and allows read/write access.
+*Prior HDFS architecture allows only single namespace for the entire cluster.
+*In that configuration, a single NameNode manages the namespace.
+*HDFS Federation addresses this limitation by adding support for multiple NameNodes or Namespaces to HDFS.
+
+Multiple NameNodes or Namespaces:
+
+*In order to scale the name servoce horizonatlly, federation uses multiple independent Namenodes or Namespaces.
+*The Namenodes are federated and are independent which doesnt require coordination with each other.
+*The Datanodes are used as storage for blocks. Each datanodes registers with all the namenodes in the cluster.
+*Datanodes sends periodic heart beats and block reports.
+
+Block Pool:
+
+*It is a set of blocks that belongs to a single namespace.
+*Datanodes stores blocks for all the block pools in the cluster.
+*Each block pool is managed independently and this allows namespace to generate block Ids for new blocks without the need for
+coordination with the other namespaces.
+
+HDFS High Availability:
+
+*In the first version of Hadoop, the Namenode was a single point of failure in a HDFS cluster.
+*Each cluster had a single NameNode and if the machine becomes unavailable, the cluster as a whole would be unavailable until the 
+NameNode was either restarted or brought up on separate machine.
+*This impacted the total availability of the cluster in two major ways:
+             1.In the case of unplanned event such as machine crash the cluster would be unavailable until the operator restarts the NameNode.
+             2.In planned maintenance events such as software or hardware upgrades on namenode machine would result in
+               cluster downtime.
+*The HDFS High Availability feature addresses the above problems by providing the option of running two redundant Namenodes in the same cluster.
+*This allows a fast failover to new Namenode in the case if the machine crashes.
+
+2. How HDFS handles failures while writing data
+
+*The pipeline is closed and any packets in the ack queue are added to the front of the data queue.
+*The current block on the good DataNodes is given a new identity which is communicated to the NameNode.
+*The failed DataNode is removed from the pipeline and new pipeline is constructed from the two good DataNodes.
+*The remainder of the block's data is under-replicated and it arranges for a further replica to be created on another node.
+*As long as dfs.namenode.replication.min replicas are written the write will succeed.
+*The block will be asynchronously replicated across the cluster until its target replication factor is reached.
